@@ -14,11 +14,12 @@ const BASE_C = 'C'
 const BASE_A = 'A'
 const BASE_G = 'G'
 
-var BYTES2NT = []byte{
-    BASE_T,
-    BASE_C,
-    BASE_A,
-    BASE_G,
+var BIT2NT = []byte{
+	BASE_T,
+	BASE_C,
+	BASE_A,
+	BASE_G,
 }
 
 var NT2BYTES = []byte{}
+var BYTE2NT = [][]byte{}
