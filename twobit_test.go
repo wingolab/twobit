@@ -14,6 +14,20 @@ import (
 	"testing"
 )
 
+func openTestLargeTwoBit() (*Reader, error) {
+	f, err := os.Open("examples/hg19.2bit")
+	if err != nil {
+		return nil, err
+	}
+
+	tb, err := NewReader(f)
+	if err != nil {
+		return nil, err
+	}
+
+	return tb, nil
+}
+
 func openTestTwoBit() (*Reader, error) {
 	f, err := os.Open("examples/simple.2bit")
 	if err != nil {
@@ -85,6 +99,27 @@ func TestNamesLength(t *testing.T) {
 	}
 	if sz != 15 {
 		t.Errorf("Invalid lengthNoN of ex1 sequence: %d != %d", sz, 15)
+	}
+}
+
+func BenchmarkLargeRead(b *testing.B) {
+	bb, err := openTestLargeTwoBit()
+	if err != nil {
+		b.Errorf("%s", err)
+	}
+
+	_, err = bb.Read("not-found")
+	if err == nil {
+		b.Errorf("Found non-existent name")
+	}
+
+	regions := []string{"chr1", "chr2"}
+	for _, chr := range regions {
+		seq, err := bb.Read(chr)
+		if err != nil {
+			b.Errorf("Failed to read sequence: %s", err)
+		}
+		b.Logf("Read %d letters in %s", len(seq), chr)
 	}
 }
 
