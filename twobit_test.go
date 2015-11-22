@@ -102,27 +102,6 @@ func TestNamesLength(t *testing.T) {
 	}
 }
 
-func BenchmarkLargeRead(b *testing.B) {
-	bb, err := openTestLargeTwoBit()
-	if err != nil {
-		b.Errorf("%s", err)
-	}
-
-	_, err = bb.Read("not-found")
-	if err == nil {
-		b.Errorf("Found non-existent name")
-	}
-
-	regions := []string{"chr1", "chr2"}
-	for _, chr := range regions {
-		seq, err := bb.Read(chr)
-		if err != nil {
-			b.Errorf("Failed to read sequence: %s", err)
-		}
-		b.Logf("Read %d letters in %s", len(seq), chr)
-	}
-}
-
 func TestRead(t *testing.T) {
 	tb, err := openTestTwoBit()
 	if err != nil {
@@ -151,6 +130,42 @@ func TestRead(t *testing.T) {
 
 		if string(seq) != good {
 			t.Errorf("Invalid sequence: %s != %s", seq, good)
+		}
+	}
+}
+
+func BenchmarkUnpackWithArray(b *testing.B) {
+	bb, err := openTestLargeTwoBit()
+	if err != nil {
+		b.Errorf("Error loading twobit file: %s", err)
+	}
+	chr1SeqBytes, err := bb.Read("chr1")
+	if err != nil {
+		b.Errorf("Error reading chr1 from twobit file: %s", err)
+	}
+
+	for i := 0; i < b.N; i++ {
+		seq := UnpackWithArray(chr1SeqBytes, len(chr1SeqBytes))
+		if len(chr1SeqBytes) != len(seq) {
+			b.Errorf("Invalid sequence unpacking\n")
+		}
+	}
+}
+
+func BenchmarkUnpack(b *testing.B) {
+	bb, err := openTestLargeTwoBit()
+	if err != nil {
+		b.Errorf("Error loading twobit file: %s", err)
+	}
+	chr1SeqBytes, err := bb.Read("chr1")
+	if err != nil {
+		b.Errorf("Error reading chr1 from twobit file: %s", err)
+	}
+
+	for i := 0; i < b.N; i++ {
+		seq := Unpack(chr1SeqBytes, len(chr1SeqBytes))
+		if len(chr1SeqBytes) != len(seq) {
+			b.Errorf("Invalid sequence unpacking\n")
 		}
 	}
 }
