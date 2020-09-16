@@ -10,8 +10,16 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
+)
+
+var (
+	errStartGreaterThanEndPos = errors.New("end <= start")
+	errBadStartPos            = errors.New("start < 0")
+	errBadEndPos              = errors.New("end <= 0")
+	errBeyondChrom            = errors.New("end > chrom length")
 )
 
 // 2bit header
@@ -263,6 +271,15 @@ func (r *Reader) Read(name string) ([]byte, error) {
 	return r.ReadRange(name, 0, 0)
 }
 
+// ReadAll takes a name and returns the entire sequence
+func (r *Reader) ReadAll(name string) ([]byte, error) {
+	rec, err := r.parseRecord(name, true)
+	if err != nil {
+		return nil, err
+	}
+	return r.ReadRange(name, 0, int(rec.dnaSize))
+}
+
 // Read sequence from start to end.
 func (r *Reader) ReadRange(name string, start, end int) ([]byte, error) {
 	rec, err := r.parseRecord(name, true)
@@ -272,23 +289,20 @@ func (r *Reader) ReadRange(name string, start, end int) ([]byte, error) {
 
 	bases := int(rec.dnaSize)
 
-	// TODO: handle -1 ?
 	if start < 0 {
-		start = 0
+		return nil, errBadStartPos
 	}
 
-	//TODO: should we error out here?
-	if end > bases {
-		end = bases
-	}
-
-	// TODO: handle -1 ?
-	if end == 0 || end < 0 {
-		end = bases
+	if end <= 0 {
+		return nil, errBadEndPos
 	}
 
 	if end <= start {
-		return nil, fmt.Errorf("Invalid range: %d-%d", start, end)
+		return nil, errStartGreaterThanEndPos
+	}
+
+	if end > bases {
+		return nil, errBeyondChrom
 	}
 
 	bases = end - start
@@ -404,7 +418,7 @@ func NewReader(r io.ReadSeeker) (*Reader, error) {
 	return tb, nil
 }
 
-// Returns the length for sequence with name
+// Length takes a name and gives its length or an error if name is not found
 func (r *Reader) Length(name string) (int, error) {
 	rec, err := r.parseRecord(name, false)
 	if err != nil {
@@ -414,7 +428,8 @@ func (r *Reader) Length(name string) (int, error) {
 	return int(rec.dnaSize), nil
 }
 
-// Returns the length for sequence with name but does not count Ns
+// LengthNoN takes a name and returns the length that does not count Ns for
+// the name or error if not found
 func (r *Reader) LengthNoN(name string) (int, error) {
 	rec, err := r.parseRecord(name, true)
 	if err != nil {

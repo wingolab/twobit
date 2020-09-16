@@ -102,6 +102,23 @@ func TestNamesLength(t *testing.T) {
 	}
 }
 
+func TestReadAll(t *testing.T) {
+	tb, err := openTestTwoBit()
+	if err != nil {
+		t.Errorf("%s", err)
+	}
+
+	region := "ACTgcctttnnnNantnaCgc"
+
+	seq, err := tb.ReadAll("ex1")
+	if err != nil {
+		t.Errorf("Fail to read sequence: %s", err)
+	}
+	if string(seq) != region {
+		t.Errorf("Invalid sequence '%s' != '%s'", region, seq)
+	}
+}
+
 func TestRead(t *testing.T) {
 	tb, err := openTestTwoBit()
 	if err != nil {
@@ -114,12 +131,12 @@ func TestRead(t *testing.T) {
 	}
 
 	regions := map[string][]int{
-		"ACTgcctttnnnNantnaCgc": []int{0, 0},
-		"ACTgc":                 []int{0, 5},
-		"ctttnn":                []int{5, 11},
-		"tnaCgc":                []int{15, 21},
-		"gc":                    []int{19, 21},
-		"c":                     []int{20, 21},
+		// "ACTgcctttnnnNantnaCgc": []int{0, 0}, -> moved to TestReadAll
+		"ACTgc":  []int{0, 5},
+		"ctttnn": []int{5, 11},
+		"tnaCgc": []int{15, 21},
+		"gc":     []int{19, 21},
+		"c":      []int{20, 21},
 	}
 
 	for good, coords := range regions {
